@@ -30,7 +30,7 @@ jobs:
     - name: Run temperature logger
       env:
         OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-      run: python scripts/temp_logger.py
+      run: python temp_logger.py
 
     - name: Commit and push if changed
       run: |
