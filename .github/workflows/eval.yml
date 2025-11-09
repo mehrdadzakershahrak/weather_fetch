@@ -75,9 +75,13 @@ jobs:
       - name: Prepare metrics
         id: prep
         run: |
-          echo "metrics<<EOF" >> "$GITHUB_OUTPUT"
-          cat reports/metrics.json >> "$GITHUB_OUTPUT" || echo '{}' >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+          if [ -f reports/metrics.json ]; then
+            echo "metrics<<EOF" >> "$GITHUB_OUTPUT"
+            cat reports/metrics.json >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          else
+            echo "metrics={}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Comment on PR (only on PRs)
         if: ${{ github.event_name == 'pull_request' }}
