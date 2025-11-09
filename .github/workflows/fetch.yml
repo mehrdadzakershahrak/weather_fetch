@@ -1,0 +1,57 @@
+name: Fetch Weather (scheduled)
+on:
+  schedule:
+    - cron: "5 * * * *"   # every hour at :05
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fetch-weather
+  cancel-in-progress: true
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt || true
+
+      - name: Run logger
+        env:
+          WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}  # if you use one
+        run: |
+          python temp_logger.py
+
+      - name: Commit data changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "data: hourly update $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            git push
+          else
+            echo "No changes."
+          fi
+
+      - name: Package latest CSV/JSON
+        if: always()
+        run: |
+          mkdir -p out
+          find data -type f -maxdepth 1 -print0 | xargs -0 -I{} cp {} out/
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: latest-data
+          path: out/
