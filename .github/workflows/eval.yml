@@ -40,13 +40,15 @@ jobs:
               except Exception:
                   pass
           df = pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()
-          if not df.empty and {'timestamp','temp'} <= set(df.columns):
+          # Handle both 'temp' and 'temperature_celsius' column names
+          temp_col = 'temperature_celsius' if 'temperature_celsius' in df.columns else 'temp'
+          if not df.empty and {'timestamp', temp_col} <= set(df.columns):
               df = df.sort_values('timestamp')
-              df['lag1'] = df['temp'].shift(1)
+              df['lag1'] = df[temp_col].shift(1)
               df = df.dropna()
               from sklearn.linear_model import LinearRegression
               X = df[['lag1']].values
-              y = df['temp'].values
+              y = df[temp_col].values
               m = LinearRegression().fit(X, y)
               yhat = m.predict(X)
               mae = float(abs(y - yhat).mean())
