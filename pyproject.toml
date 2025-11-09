@@ -19,4 +19,5 @@ dev = [
     "pytest>=7.4.4",
     "ruff>=0.14.4",
     "types-requests>=2.31.0.20231231",
+    "pandas-stubs>=2.0.0",
 ]
