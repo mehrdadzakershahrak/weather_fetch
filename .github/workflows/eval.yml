@@ -78,9 +78,8 @@ jobs:
         id: prep
         run: |
           if [ -f reports/metrics.json ]; then
-            echo "metrics<<EOF" >> "$GITHUB_OUTPUT"
-            cat reports/metrics.json >> "$GITHUB_OUTPUT"
-            echo "EOF" >> "$GITHUB_OUTPUT"
+            METRICS=$(cat reports/metrics.json | tr -d '\n')
+            echo "metrics=$METRICS" >> "$GITHUB_OUTPUT"
           else
             echo "metrics={}" >> "$GITHUB_OUTPUT"
           fi
