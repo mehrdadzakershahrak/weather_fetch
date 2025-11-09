@@ -55,12 +55,28 @@ jobs:
               pathlib.Path("reports").mkdir(exist_ok=True)
               with open("reports/metrics.json","w") as f:
                   json.dump({"mae": mae}, f, indent=2)
-              plt.figure()
-              plt.plot(df['timestamp'][-200:], y[-200:], label='y')
-              plt.plot(df['timestamp'][-200:], yhat[-200:], label='yhat')
-              plt.title("Last 200 points: actual vs baseline")
-              plt.xticks(rotation=45); plt.tight_layout()
-              plt.savefig("reports/last200.png")
+
+              # Create improved plot
+              fig, ax = plt.subplots(figsize=(14, 7))
+              timestamps = df['timestamp'].iloc[-200:].values
+              x_indices = range(len(timestamps))
+
+              ax.plot(x_indices, y[-200:], label='Actual Temperature', linewidth=2, alpha=0.8, color='#2E86AB')
+              ax.plot(x_indices, yhat[-200:], label='Predicted (Baseline)', linewidth=2, alpha=0.8, color='#F77F00', linestyle='--')
+
+              ax.set_title(f"Temperature: Actual vs Baseline Prediction (MAE: {mae:.2f}°C)", fontsize=14, fontweight='bold')
+              ax.set_xlabel("Time", fontsize=12)
+              ax.set_ylabel("Temperature (°C)", fontsize=12)
+              ax.legend(loc='upper right', fontsize=11)
+              ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
+
+              # Set x-ticks to show only every 20th timestamp for readability
+              tick_positions = range(0, len(timestamps), 20)
+              ax.set_xticks(tick_positions)
+              ax.set_xticklabels([timestamps[i] for i in tick_positions], rotation=45, ha='right')
+
+              plt.tight_layout()
+              plt.savefig("reports/last200.png", dpi=300, bbox_inches='tight')
           else:
               pathlib.Path("reports").mkdir(exist_ok=True)
               with open("reports/metrics.json","w") as f:
