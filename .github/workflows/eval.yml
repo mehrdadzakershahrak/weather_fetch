@@ -1,0 +1,68 @@
+name: Baseline Eval
+on:
+  push:
+    paths:
+      - 'temp_logger.py'
+      - 'data/**'
+      - 'eval/**'
+  schedule:
+    - cron: "20 3 * * *"   # daily at 03:20 UTC
+  workflow_dispatch:
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas scikit-learn matplotlib
+
+      - name: Run baseline
+        run: |
+          python - <<'PY'
+          import pandas as pd, json, pathlib, matplotlib.pyplot as plt
+          p = pathlib.Path("data")
+          df_list = []
+          for f in p.glob("*.csv"):
+            try:
+              df_list.append(pd.read_csv(f))
+            except Exception:
+              pass
+          df = pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()
+          # Expect columns like timestamp, temp; adapt if different
+          if not df.empty and {'timestamp','temp'} <= set(df.columns):
+              df = df.sort_values('timestamp')
+              df['lag1'] = df['temp'].shift(1)
+              df = df.dropna()
+              from sklearn.linear_model import LinearRegression
+              import numpy as np
+              X = df[['lag1']].values
+              y = df['temp'].values
+              m = LinearRegression().fit(X, y)
+              yhat = m.predict(X)
+              mae = float(abs(y - yhat).mean())
+              pathlib.Path("reports").mkdir(exist_ok=True)
+              with open("reports/metrics.json","w") as f:
+                  json.dump({"mae": mae}, f, indent=2)
+              plt.figure()
+              plt.plot(df['timestamp'][-200:], y[-200:], label='y')
+              plt.plot(df['timestamp'][-200:], yhat[-200:], label='yhat')
+              plt.title("Last 200 points: actual vs baseline")
+              plt.xticks(rotation=45); plt.tight_layout()
+              plt.savefig("reports/last200.png")
+          else:
+              pathlib.Path("reports").mkdir(exist_ok=True)
+              with open("reports/metrics.json","w") as f:
+                  json.dump({"note":"no data yet"}, f)
+          PY
+
+      - name: Upload eval artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: reports/
