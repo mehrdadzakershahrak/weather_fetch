@@ -2,7 +2,6 @@
 
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 from pathlib import Path
 
 
@@ -74,7 +73,9 @@ def create_seasonal_plots(df, output_dir="reports"):
 
     ax.set_xticklabels(available_seasons)
     ax.set_ylabel("Temperature (°C)", fontsize=12)
-    ax.set_title("Temperature Distribution by Season - Chicago", fontsize=14, fontweight="bold")
+    ax.set_title(
+        "Temperature Distribution by Season - Chicago", fontsize=14, fontweight="bold"
+    )
     ax.grid(True, alpha=0.3, axis="y")
     plt.tight_layout()
     plt.savefig(f"{output_dir}/seasonal_boxplot.png", dpi=300, bbox_inches="tight")
@@ -108,7 +109,9 @@ def create_seasonal_plots(df, output_dir="reports"):
         )
 
     ax.set_ylabel("Average Temperature (°C)", fontsize=12)
-    ax.set_title("Average Temperature by Season - Chicago", fontsize=14, fontweight="bold")
+    ax.set_title(
+        "Average Temperature by Season - Chicago", fontsize=14, fontweight="bold"
+    )
     ax.grid(True, alpha=0.3, axis="y")
     plt.tight_layout()
     plt.savefig(f"{output_dir}/seasonal_averages.png", dpi=300, bbox_inches="tight")
