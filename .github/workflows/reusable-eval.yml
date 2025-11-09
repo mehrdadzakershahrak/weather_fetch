@@ -13,8 +13,65 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
-      - run: |
+
+      - name: Install dependencies
+        run: |
           python -m pip install --upgrade pip
-          pip install pandas scikit-learn
-      - run: |
-          echo "Would eval on ${{ inputs.data_glob }} here..."
+          pip install pandas scikit-learn matplotlib
+
+      - name: Run evaluation
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          import json
+          import pathlib
+          import glob
+          from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+          pattern = "${{ inputs.data_glob }}"
+          files = glob.glob(pattern)
+
+          df_list = []
+          for f in files:
+              try:
+                  df = pd.read_csv(f)
+                  df_list.append(df)
+              except Exception as e:
+                  print(f"Could not read {f}: {e}")
+
+          if df_list:
+              df = pd.concat(df_list, ignore_index=True)
+              print(f"Loaded {len(df)} rows from {len(files)} file(s)")
+
+              # Basic statistics
+              stats = {
+                  "total_rows": len(df),
+                  "files_processed": len(files),
+                  "columns": list(df.columns)
+              }
+
+              # If temperature data exists, compute basic metrics
+              if 'temp' in df.columns or 'temperature_celsius' in df.columns:
+                  temp_col = 'temp' if 'temp' in df.columns else 'temperature_celsius'
+                  stats["temp_mean"] = float(df[temp_col].mean())
+                  stats["temp_std"] = float(df[temp_col].std())
+                  stats["temp_min"] = float(df[temp_col].min())
+                  stats["temp_max"] = float(df[temp_col].max())
+
+              pathlib.Path("eval-results").mkdir(exist_ok=True)
+              with open("eval-results/stats.json", "w") as f:
+                  json.dump(stats, f, indent=2)
+
+              print(json.dumps(stats, indent=2))
+          else:
+              print("No data files found or processed")
+              pathlib.Path("eval-results").mkdir(exist_ok=True)
+              with open("eval-results/stats.json", "w") as f:
+                  json.dump({"error": "No data files found"}, f, indent=2)
+          PY
+
+      - name: Upload evaluation results
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: eval-results/

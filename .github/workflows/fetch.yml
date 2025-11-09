@@ -23,11 +23,11 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt || true
+          pip install -r requirements.txt
 
       - name: Run logger
         env:
-          WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}  # if you use one
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
         run: |
           python temp_logger.py
 
@@ -47,7 +47,7 @@ jobs:
         if: always()
         run: |
           mkdir -p out
-          find data -type f -maxdepth 1 -print0 | xargs -0 -I{} cp {} out/
+          find data -maxdepth 1 -type f -print0 | xargs -0 -I{} cp {} out/
         shell: bash
 
       - name: Upload artifact
